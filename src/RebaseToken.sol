@@ -148,6 +148,14 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
         return super.transferFrom(_from, _to, _amount);
     }
 
+    /**
+     * @notice Grant the mint and burn role to the specified user
+     * @param _user The address of the user to grant the role to
+     * @dev This function can only be called by the contract owner
+     */
+    function grantMintAndBurnRole(address _user) external onlyOwner {
+        grantRole(MINT_BURN_ROLE, _user);
+    }
 
     /**
      * INTERNAL FUNCTIONS
