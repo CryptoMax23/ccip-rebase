@@ -82,9 +82,8 @@ contract Vault {
     /**
      * EXTERNAL FUNCTIONS
      */
-
     function deposit() external payable aboveZero(msg.value) {
-        i_rebaseToken.mint(msg.sender, msg.value);
+        i_rebaseToken.mint(msg.sender, msg.value, i_rebaseToken.getInterestRate());
         emit Deposit(msg.value, msg.sender);
     }
 

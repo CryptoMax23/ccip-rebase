@@ -28,10 +28,8 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
-
 /**
  * @title Rebase Token
- * @author Harsh Suthar
  * @notice A cross chain rebase token able to incentivize the users based on the interest rate they got
  * @notice This token have a decremental interest for every new incoming depositer
  * @notice Early adopters would always have a higher interest rate compared to the later ones
@@ -39,7 +37,6 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
  * @notice This token is a ERC20 token
  */
 contract RebaseToken is ERC20, Ownable, AccessControl {
-
     /**
      * STATE VARIABLES
      */
@@ -62,13 +59,15 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
     /**
      * CONSTRUCTOR
      */
-    constructor() ERC20("RebaseToken", "RBT") Ownable(msg.sender) {}
-
+    constructor() ERC20("RebaseToken", "RBT") Ownable(msg.sender) {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(MINT_BURN_ROLE, msg.sender);
+    }
 
     /**
      * EXTERNAL FUNCTIONS
      */
-    
+
     /**
      * @notice Set the interest rate for the token
      * @param interestRate The new interest rate to be set
@@ -76,7 +75,7 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      * @dev The interest rate must be lower than the current interest rate
      */
     function setInterestRate(uint256 interestRate) external onlyOwner {
-        if(interestRate >= s_interestRate) {
+        if (interestRate >= s_interestRate) {
             revert RebaseToken__NewInterestRateMustBeLowerThanOld();
         }
         s_interestRate = interestRate;
@@ -89,9 +88,9 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      * @param _amount The amount of tokens to mint
      * @dev This function mints new tokens and updates the user's interest rate
      */
-    function mint(address _to, uint256 _amount) external onlyRole(MINT_BURN_ROLE) {
+    function mint(address _to, uint256 _amount, uint256 _interestRate) external onlyRole(MINT_BURN_ROLE) {
         _accruedMintInterest(_to);
-        s_UserInterestRate[_to] = s_interestRate;
+        s_UserInterestRate[_to] = _interestRate;
         _mint(_to, _amount);
     }
 
@@ -105,7 +104,7 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      */
     function burn(address _from, uint256 _amount) external onlyRole(MINT_BURN_ROLE) {
         uint256 currentBalance = balanceOf(_from);
-        if(_amount == type(uint256).max){
+        if (_amount == type(uint256).max) {
             _amount = currentBalance;
         }
         _accruedMintInterest(_from);
@@ -123,12 +122,13 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
     function transfer(address _to, uint256 _amount) public override returns (bool) {
         _accruedMintInterest(_to);
         _accruedMintInterest(msg.sender);
-        /** If its a new account, we assume the user wants to transfer his funds from his prev account to new account and make the new account also inherit the interest rate from previous account
+        /**
+         * If its a new account, we assume the user wants to transfer his funds from his prev account to new account and make the new account also inherit the interest rate from previous account
          */
-        if(_amount == type(uint256).max){
+        if (_amount == type(uint256).max) {
             _amount = balanceOf(msg.sender);
         }
-        if(balanceOf(_to) == 0 && _amount > 0){
+        if (balanceOf(_to) == 0 && _amount > 0) {
             s_UserInterestRate[_to] = s_UserInterestRate[msg.sender];
         }
         return super.transfer(_to, _amount);
@@ -137,12 +137,13 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
     function transferFrom(address _from, address _to, uint256 _amount) public override returns (bool) {
         _accruedMintInterest(_to);
         _accruedMintInterest(_from);
-        /** If its a new account, we assume the user wants to transfer his funds from his prev account to new account and make the new account also inherit the interest rate from previous account
+        /**
+         * If its a new account, we assume the user wants to transfer his funds from his prev account to new account and make the new account also inherit the interest rate from previous account
          */
-        if(_amount == type(uint256).max){
+        if (_amount == type(uint256).max) {
             _amount = balanceOf(_from);
         }
-        if(balanceOf(_to) == 0 && _amount > 0){
+        if (balanceOf(_to) == 0 && _amount > 0) {
             s_UserInterestRate[_to] = s_UserInterestRate[_from];
         }
         return super.transferFrom(_from, _to, _amount);
@@ -171,13 +172,14 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      */
     function _accruedMintInterest(address _user) internal {
         uint256 previousPrincipleBalance = super.balanceOf(_user);
+        
 
         uint256 currentPrinciple = balanceOf(_user);
 
         uint256 balanceIncrease = currentPrinciple - previousPrincipleBalance;
         s_lastUserUpdatedTime[_user] = block.timestamp;
 
-        if(balanceIncrease > 0){
+        if (balanceIncrease > 0) {
             _mint(_user, balanceIncrease);
         }
     }
@@ -207,22 +209,26 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
     function getInterestRate() public view returns (uint256) {
         return s_interestRate;
     }
+
     function getUserInterestRate(address userAddress) public view returns (uint256) {
         return s_UserInterestRate[userAddress];
     }
+
     function getUserLastUpdatedTime(address userAddress) public view returns (uint256) {
         return s_lastUserUpdatedTime[userAddress];
     }
+
     function getPrecisionFactor() public pure returns (uint256) {
         return PRECISION_FACTOR;
     }
     /**
-     * 
+     *
      * @param userAddress The address of the user
      * @return The principal balance of the user
      * @dev This function returns the principal balance of the user
      * @notice It does not include the interest growth factor
      */
+
     function getPrincipalBalance(address userAddress) public view returns (uint256) {
         return super.balanceOf(userAddress);
     }
