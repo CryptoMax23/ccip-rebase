@@ -150,7 +150,7 @@ contract CrossChainTest is Test {
         TokenPool.ChainUpdate[] memory chainsToAdd = new TokenPool.ChainUpdate[](1);
         bytes[] memory poolAddresses = new bytes[](1);
         poolAddresses[0] = abi.encode(remotePoolAddress);
-        
+
         chainsToAdd[0] = TokenPool.ChainUpdate({
             remoteChainSelector: remoteChainSelector,
             remotePoolAddresses: poolAddresses,

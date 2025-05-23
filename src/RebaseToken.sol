@@ -172,7 +172,6 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      */
     function _accruedMintInterest(address _user) internal {
         uint256 previousPrincipleBalance = super.balanceOf(_user);
-        
 
         uint256 currentPrinciple = balanceOf(_user);
 

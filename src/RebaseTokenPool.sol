@@ -8,7 +8,7 @@ import {Pool} from "@ccip/contracts/src/v0.8/ccip/libraries/Pool.sol"; // For CC
 
 contract RebaseTokenPool is TokenPool {
     constructor(IERC20 _token, address[] memory _allowlist, address _rnmProxy, address _router)
-        TokenPool(_token,18, _allowlist, _rnmProxy, _router)
+        TokenPool(_token, 18, _allowlist, _rnmProxy, _router)
     {
         // Constructor body (if any additional logic is needed)
     }
